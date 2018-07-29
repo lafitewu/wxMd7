@@ -1,0 +1,11 @@
+{
+  "pages":[
+    "pages/index/index"
+  ],
+  "window":{
+    "backgroundTextStyle":"light",
+    "navigationBarBackgroundColor": "#17A8E2",
+    "navigationBarTitleText": "欢乐兑",
+    "navigationBarTextStyle":"black"
+  }
+}
