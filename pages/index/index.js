@@ -21,7 +21,8 @@ Page({
     unionId: '',
     appID: '',
     successfn: true,
-    hostname: ''
+    hostname: '',
+    desc: ''
   },
   //事件处理函数
   footerFn() {
@@ -52,7 +53,6 @@ Page({
         _self.setData({
           hostname: res.data.data.baseurl
         })
-        
       }
     })
     var timeS = (Date.parse(new Date()) - this.data.time) / 1000;
@@ -84,6 +84,19 @@ Page({
           })
           console.log("奖励请求成功");
           console.log(res.data);
+          if(res.data.code == 1) {
+            wx.showToast({
+              title: '奖励领取成功！',
+              icon: 'success',
+              duration: 2000
+            })
+          }else {
+            wx.showToast({
+              title: res.data.msg,
+              icon: 'none',
+              duration: 2000
+            })
+          }
         },
         fail: function(res) {
           _self.setData({
@@ -96,6 +109,12 @@ Page({
       _self.setData({
         input_val: '',
         hideName: true
+      })
+      var Toast = _self.data.desc;
+      wx.showToast({
+        title: Toast,
+        icon: 'none',
+        duration: 4000
       })
     }
   },
@@ -135,49 +154,64 @@ Page({
           if (res.data.code == 1 && res.data.data.wxid != "") {
             var AppID = res.data.data.wxid;
             _self.setData({
-              goldTime: res.data.data.duration  
+              goldTime: res.data.data.duration,
+              desc: res.data.data.description
             })
             wx.showToast({
               title: '加载中',
               icon: 'loading',
               duration: 500
             });
+            var ContentToast = res.data.data.description;
             setTimeout(function(){
-              console.log('66666');
               console.log(AppID);
-              wx.navigateToMiniProgram({
-                appId: AppID,
-                path: 'pages/index/index',
-                extraData: {},
-                envVersion: 'release',
-                success(res) {
-                  // 打开成功
-                  console.log("打开成功！");
-                  _self.setData({
-                    time: Date.parse(new Date())
-                  });
-                },
-                fail: function (res) {
-                  console.log("失败", res);
-                  wx.showModal({
-                    title: '提示',
-                    content: "微信ID错误，请重新配置！",
-                    success: function (res) {
-                      if (res.confirm) {
+              wx.showModal({
+                title: '温馨提示',
+                content: ContentToast,
+                success: function (res) {
+                  if (res.confirm) {
+                    wx.navigateToMiniProgram({
+                      appId: AppID,
+                      path: 'pages/index/index',
+                      extraData: {},
+                      envVersion: 'release',
+                      success(res) {
+                        // 打开成功
+                        console.log("打开成功！");
                         _self.setData({
-                          hideName: true,
-                          input_val: ''
-                        })
-                      } else if (res.cancel) {
-                        _self.setData({
-                          hideName: true,
-                          input_val: ''
+                          time: Date.parse(new Date())
+                        });
+                      },
+                      fail: function (res) {
+                        console.log("失败", res);
+                        wx.showModal({
+                          title: '提示',
+                          content: "微信ID错误，请重新配置！",
+                          success: function (res) {
+                            if (res.confirm) {
+                              _self.setData({
+                                hideName: true,
+                                input_val: ''
+                              })
+                            } else if (res.cancel) {
+                              _self.setData({
+                                hideName: true,
+                                input_val: ''
+                              })
+                            }
+                          }
                         })
                       }
-                    }
-                  })
+                    });
+                  } else if (res.cancel) {
+                    _self.setData({
+                      hideName: true,
+                      input_val: ''
+                    })
+                  }
                 }
-              });
+              })
+              
             },600);
           } else {
             // console.log(res.data.msg);
