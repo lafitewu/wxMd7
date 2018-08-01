@@ -22,7 +22,8 @@ Page({
     appID: '',
     successfn: true,
     hostname: '',
-    desc: ''
+    desc: '',
+    Jumpurl: ''
   },
   //事件处理函数
   footerFn() {
@@ -56,66 +57,69 @@ Page({
       }
     })
     var timeS = (Date.parse(new Date()) - this.data.time) / 1000;
-    if (timeS - this.data.goldTime > 0 ) {
-      console.log(timeS);
+    if (_self.data.goldTime != 0) { 
+      if (timeS - this.data.goldTime > 0 ) {
+        console.log(timeS);
 
-      var times = Date.parse(new Date()),
-        key = "ce3e7c8d567106cd",
-        md5str = "openid=" + _self.data.openId + "&code=" + _self.data.input_val + "&time=" + times,
-        sign = zhmd5.md5(md5str + key);
-        console.log(_self.data.hostname);
-      wx.request({
-        url: _self.data.hostname+'/api/ads/miniok',
-        method: 'post',
-        data: {
-          unionid: _self.data.unionId,
-          openid: _self.data.openId,
-          code: _self.data.input_val,
-          time: times,
-          sign: sign
-        },
-        header: {
-          'content-type': 'application/json'
-        },
-        success: function (res) {
-          _self.setData({
-            input_val: '',
-            hideName: true
-          })
-          console.log("奖励请求成功");
-          console.log(res.data);
-          if(res.data.code == 1) {
-            wx.showToast({
-              title: '奖励领取成功！',
-              icon: 'success',
-              duration: 2000
+        var times = Date.parse(new Date()),
+          key = "ce3e7c8d567106cd",
+          md5str = "openid=" + _self.data.openId + "&code=" + _self.data.input_val + "&time=" + times,
+          sign = zhmd5.md5(md5str + key);
+          console.log(_self.data.hostname);
+        wx.request({
+          url: _self.data.hostname+'/api/ads/miniok',
+          method: 'post',
+          data: {
+            unionid: _self.data.unionId,
+            openid: _self.data.openId,
+            code: _self.data.input_val,
+            time: times,
+            sign: sign
+          },
+          header: {
+            'content-type': 'application/json'
+          },
+          success: function (res) {
+            _self.setData({
+              input_val: '',
+              hideName: true
             })
-          }else {
-            wx.showToast({
-              title: res.data.msg,
-              icon: 'none',
-              duration: 2000
+            console.log("奖励请求成功");
+            console.log(res.data);
+            if(res.data.code == 1) {
+              wx.showToast({
+                title: '奖励领取成功！',
+                icon: 'success',
+                duration: 2000
+              })
+            }else {
+              wx.showToast({
+                title: res.data.msg,
+                icon: 'none',
+                duration: 2000
+              })
+            }
+          },
+          fail: function(res) {
+            _self.setData({
+              input_val: '',
+              hideName: true
             })
           }
-        },
-        fail: function(res) {
-          _self.setData({
-            input_val: '',
-            hideName: true
-          })
-        }
-      });
-    }else {
-      _self.setData({
-        input_val: '',
-        hideName: true
-      })
-      var Toast = _self.data.desc;
-      wx.showToast({
-        title: Toast,
-        icon: 'none',
-        duration: 4000
-      })
+        });
+      }else {
+        _self.setData({
+          input_val: '',
+          hideName: true,
+          goldTime: ''
+        })
+        var Toast = _self.data.desc;
+        wx.showToast({
+          title: Toast,
+          icon: 'none',
+          duration: 4000
+        })
+      }
     }
   },
   CinputFn(e) {
@@ -153,10 +157,11 @@ Page({
           console.log(res);
           if (res.data.code == 1 && res.data.data.wxid != "") {
             var AppID = res.data.data.wxid;
+            var Duration = res.data.data.duration;
             var jumpurl = res.data.data.jumpurl;
             _self.setData({
-              goldTime: res.data.data.duration,
-              desc: res.data.data.guide
+              desc: res.data.data.guide,
+              Jumpurl: jumpurl
             })
             wx.showToast({
               title: '加载中',
@@ -165,6 +170,7 @@ Page({
             });
             var ContentToast = res.data.data.guide;
             setTimeout(function(){
+              console.log(AppID);
               console.log(jumpurl);
               wx.showModal({
                 title: '温馨提示',
@@ -179,12 +185,51 @@ Page({
                       success(res) {
                         // 打开成功
                         console.log("打开成功！");
+                        wx.request({
+                          url: _self.data.hostname + '/api/ads/minijump',
+                          method: 'post',
+                          data: {
+                            unionid: _self.data.unionId,
+                            openid: _self.data.openId,
+                            code: _self.data.input_val,
+                            jumpurl: _self.data.Jumpurl,
+                            jumpresult: '1',
+                            time: times,
+                            sign: sign
+                          },
+                          header: {
+                            'content-type': 'application/json'
+                          },
+                          success: function (res) {
+                            console.log(res);
+                            console.log("程序跳转成功！");
+                          }
+                        });
                         _self.setData({
+                          goldTime: Duration,
                           time: Date.parse(new Date())
                         });
                       },
                       fail: function (res) {
-                        console.log("失败", res);
+                        wx.request({
+                          url: _self.data.hostname + '/api/ads/minijump',
+                          method: 'post',
+                          data: {
+                            unionid: _self.data.unionId,
+                            openid: _self.data.openId,
+                            code: _self.data.input_val,
+                            jumpurl: _self.data.Jumpurl,
+                            jumpresult: '0',
+                            time: times,
+                            sign: sign
+                          },
+                          header: {
+                            'content-type': 'application/json'
+                          },
+                          success: function (res) {
+                            console.log("程序跳转失败！");
+                          }
+                        });
                         wx.showModal({
                           title: '提示',
                           content: "微信ID错误，请重新配置！",
